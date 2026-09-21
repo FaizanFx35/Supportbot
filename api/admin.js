@@ -26,7 +26,9 @@ async function telegram(method, body) {
     `https://api.telegram.org/bot${TOKEN}/${method}`,
     {
       method: 'POST',
-      headers: { 'content-type': 'application/json' },
+      headers: {
+        'content-type': 'application/json'
+      },
       body: JSON.stringify(body || {})
     }
   );
@@ -34,13 +36,298 @@ async function telegram(method, body) {
   return await response.json();
 }
 
+/*
+|--------------------------------------------------------------------------
+| DEFAULT COMMANDS
+|--------------------------------------------------------------------------
+| Missing commands are automatically added.
+| Existing commands are kept.
+|--------------------------------------------------------------------------
+*/
+
+const DEFAULT_COMMANDS = [
+  {
+    command: 'start',
+    description: 'Install the Official App and Follow Our Signals',
+    text:
+      '👋 Welcome to Fx Signal Lab!\n\n' +
+      '📲 Download our official app, access Forex Signals, and explore our latest apps and services.\n\n' +
+      'Choose an option below 👇',
+    buttons: [
+      {
+        text: '⭐ Official App',
+        url: 'https://play.google.com/store/apps/details?id=co.median.android.eezlxez'
+      },
+      {
+        text: '📊 Forex Signals App',
+        url: 'https://play.google.com/store/apps/details?id=co.median.android.odrkwln'
+      },
+      {
+        text: '💼 Exness Broker',
+        url: 'https://one.exnessonelink.com/a/vtkbbmje'
+      },
+      {
+        text: '📱 All Fx Signal Lab Apps',
+        url: 'https://play.google.com/store/apps/developer?id=Fx+Signal+Lab'
+      }
+    ]
+  },
+
+  {
+    command: 'download',
+    description: 'Download Our Apps',
+    text:
+      '📲 Fx Signal Lab Apps\n\n' +
+      'Choose what you need below 👇',
+    buttons: [
+      {
+        text: '⭐ Official App',
+        url: 'https://play.google.com/store/apps/details?id=co.median.android.eezlxez'
+      },
+      {
+        text: '📊 Forex Signals App',
+        url: 'https://play.google.com/store/apps/details?id=co.median.android.odrkwln'
+      },
+      {
+        text: '💼 Exness Broker',
+        url: 'https://one.exnessonelink.com/a/vtkbbmje'
+      },
+      {
+        text: '📱 All Fx Signal Lab Apps',
+        url: 'https://play.google.com/store/apps/developer?id=Fx+Signal+Lab'
+      }
+    ]
+  },
+
+  {
+    command: 'signals',
+    description: 'Get the Latest Trading Signals',
+    text:
+      '📊 Latest Trading Signals\n\n' +
+      'Get our latest Forex trading signals, including Entry, Stop Loss and Take Profit levels.\n\n' +
+      'Tap below to open the Forex Signals App 👇',
+    buttons: [
+      {
+        text: '📲 Open Forex Signals App',
+        url: 'https://play.google.com/store/apps/details?id=co.median.android.odrkwln'
+      }
+    ]
+  },
+
+  {
+    command: 'gold',
+    description: 'Get the Latest Gold XAUUSD Signals',
+    text:
+      '🥇 Gold XAUUSD Signals\n\n' +
+      'Get the latest Gold trading signals with Entry, Stop Loss and Take Profit levels.\n\n' +
+      'Open the Forex Signals App to view the latest Gold signals 👇',
+    buttons: [
+      {
+        text: '🥇 Open Gold Signals',
+        url: 'https://play.google.com/store/apps/details?id=co.median.android.odrkwln'
+      }
+    ]
+  },
+
+  {
+    command: 'forex',
+    description: 'Get Forex Trading Signals',
+    text:
+      '📊 Forex Trading Signals\n\n' +
+      'Access our latest Forex signals with Entry, Stop Loss and Take Profit levels.\n\n' +
+      'Tap below to open the Forex Signals App 👇',
+    buttons: [
+      {
+        text: '📲 Open Forex Signals App',
+        url: 'https://play.google.com/store/apps/details?id=co.median.android.odrkwln'
+      }
+    ]
+  },
+
+  {
+    command: 'crypto',
+    description: 'Get Crypto Trading Signals',
+    text:
+      '₿ Crypto Trading Signals\n\n' +
+      'Access our latest Crypto trading signals and market updates.\n\n' +
+      'Tap below to open the Forex Signals App 👇',
+    buttons: [
+      {
+        text: '📲 Open Signals App',
+        url: 'https://play.google.com/store/apps/details?id=co.median.android.odrkwln'
+      }
+    ]
+  },
+
+  {
+    command: 'broker',
+    description: 'Open Exness Broker Account',
+    text:
+      '💼 Exness Broker\n\n' +
+      'Open an Exness account through our official partner link.\n\n' +
+      '👇 Continue to Exness:',
+    buttons: [
+      {
+        text: '🚀 Open Exness Account',
+        url: 'https://one.exnessonelink.com/a/vtkbbmje'
+      }
+    ]
+  },
+
+  {
+    command: 'apps',
+    description: 'View All Fx Signal Lab Apps',
+    text:
+      '📱 Explore all Fx Signal Lab Apps.\n\n' +
+      'Choose from our official apps and trading tools 👇',
+    buttons: [
+      {
+        text: '🔎 View All Apps',
+        url: 'https://play.google.com/store/apps/developer?id=Fx+Signal+Lab'
+      }
+    ]
+  },
+
+  {
+    command: 'support',
+    description: 'Contact Our Support Team',
+    text:
+      '🆘 Fx Signal Lab Support\n\n' +
+      'Need help with our apps, signals or services?\n\n' +
+      'Contact our support team below 👇',
+    buttons: [
+      {
+        text: '💬 Contact Support',
+        url: 'https://t.me/forexqueeni'
+      }
+    ]
+  },
+
+  {
+    command: 'channel',
+    description: 'Join Our Official Telegram Channel',
+    text:
+      '📢 Official Telegram Channel\n\n' +
+      'Get the latest trading signals, market updates, announcements and important updates from Fx Signal Lab.\n\n' +
+      '👇 Join our official channel:',
+    buttons: [
+      {
+        text: '📢 Join Official Channel',
+        url: 'https://t.me/livesignals_trading'
+      }
+    ]
+  },
+
+  {
+    command: 'group',
+    description: 'Join Our Official Telegram Group',
+    text:
+      '👥 Official Telegram Group\n\n' +
+      'Join our community to stay connected with other traders and receive updates from Fx Signal Lab.\n\n' +
+      '👇 Join the group:',
+    buttons: [
+      {
+        text: '👥 Join Official Group',
+        url: 'https://t.me/livesignals_tradings'
+      }
+    ]
+  },
+
+  {
+    command: 'exness',
+    description: 'Open Exness Broker Account',
+    text:
+      '💼 Exness Broker\n\n' +
+      'Open your Exness account through our official partner link.\n\n' +
+      '👇 Continue to Exness:',
+    buttons: [
+      {
+        text: '🚀 Open Exness Account',
+        url: 'https://one.exnessonelink.com/a/vtkbbmje'
+      }
+    ]
+  },
+
+  {
+    command: 'xm',
+    description: 'Open XM Broker Account',
+    text:
+      '💼 XM Broker\n\n' +
+      'Access the broker registration link below.\n\n' +
+      '👇 Continue:',
+    buttons: [
+      {
+        text: '🚀 Open XM Account',
+        url: 'https://trendo.com/invite?market=googleplay&code=3317391'
+      }
+    ]
+  },
+
+  {
+    command: 'trendo',
+    description: 'Open Trendo Market Broker Account',
+    text:
+      '💼 Trendo Market\n\n' +
+      'Open Trendo Market using the link below.\n\n' +
+      '👇 Register / Open Trendo:',
+    buttons: [
+      {
+        text: '🚀 Open Trendo Market',
+        url: 'https://trendo.com/invite?market=googleplay&code=3317391'
+      }
+    ]
+  }
+];
+
+
+/*
+|--------------------------------------------------------------------------
+| Add missing commands without removing existing commands
+|--------------------------------------------------------------------------
+*/
+
+function mergeDefaultCommands(config) {
+
+  if (!config || typeof config !== 'object') {
+    config = {};
+  }
+
+  if (!Array.isArray(config.commands)) {
+    config.commands = [];
+  }
+
+  const existing = new Set(
+    config.commands
+      .map(item => String(item?.command || '').replace(/^\//, '').trim())
+      .filter(Boolean)
+  );
+
+  DEFAULT_COMMANDS.forEach(defaultCommand => {
+
+    if (!existing.has(defaultCommand.command)) {
+
+      config.commands.push(
+        JSON.parse(JSON.stringify(defaultCommand))
+      );
+
+    }
+
+  });
+
+  return config;
+}
+
+
 const page = `<!doctype html>
 <html>
 <head>
+
 <meta name="viewport" content="width=device-width,initial-scale=1">
+
 <title>Queen i Support Admin</title>
 
 <style>
+
 body{
   font-family:system-ui,-apple-system,sans-serif;
   background:#f5f7fb;
@@ -161,7 +448,9 @@ button{
   font-size:12px;
   font-weight:700
 }
+
 </style>
+
 </head>
 
 <body>
@@ -169,80 +458,87 @@ button{
 <div class="wrap">
 
 <div class="top">
-  <div>
-    <h1>🤖 Queen i Support</h1>
-    <small>Private Telegram Bot Admin Panel</small>
-  </div>
 
-  <span class="pill">Self-hosted</span>
+<div>
+<h1>🤖 Queen i Support</h1>
+<small>Private Telegram Bot Admin Panel</small>
 </div>
+
+<span class="pill">Self-hosted</span>
+
+</div>
+
 
 <div id="login" class="card">
 
-  <h3>Admin Login</h3>
+<h3>Admin Login</h3>
 
-  <input
-    id="secret"
-    type="password"
-    placeholder="ADMIN_SECRET"
-  >
+<input
+id="secret"
+type="password"
+placeholder="ADMIN_SECRET"
+>
 
-  <button class="primary" onclick="login()">
-    Open Panel
-  </button>
+<button class="primary" onclick="login()">
+Open Panel
+</button>
 
 </div>
+
 
 <div id="panel" class="hidden">
 
-  <div class="card">
+<div class="card">
 
-    <div class="top">
+<div class="top">
 
-      <h2>Commands</h2>
+<h2>Commands</h2>
 
-      <button class="primary" onclick="addCmd()">
-        + Add Command
-      </button>
+<button class="primary" onclick="addCmd()">
++ Add Command
+</button>
 
-    </div>
+</div>
 
-    <div id="list"></div>
+<div id="list"></div>
 
-    <div class="row">
+<div class="row">
 
-      <button class="primary" onclick="saveAll()">
-        💾 Save to GitHub
-      </button>
+<button class="primary" onclick="saveAll()">
+💾 Save to GitHub
+</button>
 
-      <button class="muted" onclick="syncTelegram()">
-        🔄 Sync Telegram Menu
-      </button>
+<button class="muted" onclick="syncTelegram()">
+🔄 Sync Telegram Menu
+</button>
 
-      <button class="muted" onclick="setupWebhook()">
-        ⚙️ Setup Webhook
-      </button>
+<button class="muted" onclick="setupWebhook()">
+⚙️ Setup Webhook
+</button>
 
-    </div>
+</div>
 
-    <div id="status" class="status">
-      Ready.
-    </div>
+<div id="status" class="status">
+Ready.
+</div>
 
-  </div>
+</div>
 
 </div>
 
 </div>
+
 
 <script>
 
 let secret = '';
+
 let config = {
-  commands: []
+  commands:[]
 };
 
-function login() {
+
+function login(){
 
   secret =
     document
@@ -250,7 +546,7 @@ function login() {
       .value
       .trim();
 
-  if (!secret) return;
+  if(!secret) return;
 
   localStorage.setItem(
     'queen_admin',
@@ -258,36 +554,40 @@ function login() {
   );
 
   load();
+
 }
 
-async function api(action, body) {
 
-  const response = await fetch(
-    '/api/admin',
-    {
-      method:'POST',
+async function api(action,body){
 
-      headers:{
-        'content-type':'application/json',
-        'x-admin-secret':secret
-      },
+  const response =
+    await fetch(
+      '/api/admin',
+      {
+        method:'POST',
 
-      body:JSON.stringify(
-        Object.assign(
-          { action:action },
-          body || {}
+        headers:{
+          'content-type':'application/json',
+          'x-admin-secret':secret
+        },
+
+        body:JSON.stringify(
+          Object.assign(
+            {action:action},
+            body || {}
+          )
         )
-      )
-    }
-  );
+      }
+    );
 
   let data;
 
-  try {
+  try{
 
-    data = await response.json();
+    data =
+      await response.json();
 
-  } catch(e) {
+  }catch(e){
 
     throw new Error(
       'Server returned an invalid response. Check Vercel logs.'
@@ -295,7 +595,7 @@ async function api(action, body) {
 
   }
 
-  if (!response.ok || !data.ok) {
+  if(!response.ok || !data.ok){
 
     throw new Error(
       data.error ||
@@ -306,29 +606,67 @@ async function api(action, body) {
   }
 
   return data;
+
 }
 
-async function load() {
 
-  try {
+async function load(){
+
+  try{
 
     secret =
       secret ||
       localStorage.getItem('queen_admin') ||
       '';
 
-    if (!secret) return;
+    if(!secret) return;
 
     const data =
       await api('get');
 
     config =
       data.config ||
-      { commands:[] };
+      {commands:[]};
 
-    if (!Array.isArray(config.commands)) {
+    if(!Array.isArray(config.commands)){
       config.commands = [];
     }
+
+    /*
+    IMPORTANT:
+    Add missing default commands.
+    */
+
+    let changed = false;
+
+    const existing =
+      new Set(
+        config.commands
+          .map(item =>
+            String(
+              item?.command || ''
+            )
+            .replace(/^\\//,'')
+            .trim()
+          )
+          .filter(Boolean)
+      );
+
+    DEFAULT_COMMANDS.forEach(function(item){
+
+      if(!existing.has(item.command)){
+
+        config.commands.push(
+          JSON.parse(
+            JSON.stringify(item)
+          )
+        );
+
+        changed = true;
+
+      }
+
+    });
 
     document
       .getElementById('login')
@@ -342,7 +680,15 @@ async function load() {
 
     render();
 
-  } catch(error) {
+    if(changed){
+
+      showStatus(
+        'New commands added. Click 💾 Save to GitHub to save them.'
+      );
+
+    }
+
+  }catch(error){
 
     document
       .getElementById('status')
@@ -353,7 +699,8 @@ async function load() {
 
 }
 
-function render() {
+
+function render(){
 
   const list =
     document.getElementById('list');
@@ -446,14 +793,15 @@ function render() {
 
 }
 
-function renderButtons(commandIndex) {
+
+function renderButtons(commandIndex){
 
   const box =
     document.getElementById(
       'buttons-' + commandIndex
     );
 
-  if (!box) return;
+  if(!box) return;
 
   box.innerHTML = '';
 
@@ -514,7 +862,8 @@ function renderButtons(commandIndex) {
 
 }
 
-function syncFields() {
+
+function syncFields(){
 
   document
     .querySelectorAll('[data-command-index]')
@@ -528,7 +877,7 @@ function syncFields() {
       const field =
         element.dataset.field;
 
-      if (config.commands[index]) {
+      if(config.commands[index]){
 
         config.commands[index][field] =
           element.value;
@@ -536,6 +885,7 @@ function syncFields() {
       }
 
     });
+
 
   document
     .querySelectorAll('[data-button-command]')
@@ -554,14 +904,14 @@ function syncFields() {
       const field =
         element.dataset.buttonField;
 
-      if (
+      if(
         config.commands[commandIndex] &&
         Array.isArray(
           config.commands[commandIndex].buttons
         ) &&
         config.commands[commandIndex]
           .buttons[buttonIndex]
-      ) {
+      ){
 
         config.commands[commandIndex]
           .buttons[buttonIndex][field] =
@@ -573,13 +923,21 @@ function syncFields() {
 
 }
 
-function addCmd() {
+
+/*
+|--------------------------------------------------------------------------
+| FIXED ADD COMMAND
+|--------------------------------------------------------------------------
+*/
+
+function addCmd(){
 
   syncFields();
 
   config.commands.push({
 
-    command:'newcommand',
+    command:'newcommand' +
+      Date.now().toString().slice(-5),
 
     description:'New command',
 
@@ -591,11 +949,24 @@ function addCmd() {
 
   render();
 
+  showStatus(
+    'New command added. Edit it and click 💾 Save to GitHub.'
+  );
+
 }
 
-function deleteCommand(index) {
+
+function deleteCommand(index){
 
   syncFields();
+
+  if(
+    !confirm(
+      'Delete this command?'
+    )
+  ){
+    return;
+  }
 
   config.commands.splice(index,1);
 
@@ -603,15 +974,16 @@ function deleteCommand(index) {
 
 }
 
-function addButton(commandIndex) {
+
+function addButton(commandIndex){
 
   syncFields();
 
-  if (
+  if(
     !Array.isArray(
       config.commands[commandIndex].buttons
     )
-  ) {
+  ){
 
     config.commands[commandIndex].buttons = [];
 
@@ -631,24 +1003,29 @@ function addButton(commandIndex) {
 
 }
 
+
 function deleteButton(
   commandIndex,
   buttonIndex
-) {
+){
 
   syncFields();
 
   config.commands[commandIndex]
     .buttons
-    .splice(buttonIndex,1);
+    .splice(
+      buttonIndex,
+      1
+    );
 
   render();
 
 }
 
-async function saveAll() {
 
-  try {
+async function saveAll(){
+
+  try{
 
     syncFields();
 
@@ -665,7 +1042,7 @@ async function saveAll() {
       'Saved.'
     );
 
-  } catch(error) {
+  }catch(error){
 
     showStatus(
       error.message
@@ -675,9 +1052,10 @@ async function saveAll() {
 
 }
 
-async function syncTelegram() {
 
-  try {
+async function syncTelegram(){
+
+  try{
 
     syncFields();
 
@@ -689,7 +1067,7 @@ async function syncTelegram() {
       'Telegram menu synced.'
     );
 
-  } catch(error) {
+  }catch(error){
 
     showStatus(
       error.message
@@ -699,9 +1077,10 @@ async function syncTelegram() {
 
 }
 
-async function setupWebhook() {
 
-  try {
+async function setupWebhook(){
+
+  try{
 
     const data =
       await api('setup');
@@ -711,7 +1090,7 @@ async function setupWebhook() {
       'Webhook connected.'
     );
 
-  } catch(error) {
+  }catch(error){
 
     showStatus(
       error.message
@@ -721,7 +1100,8 @@ async function setupWebhook() {
 
 }
 
-function showStatus(message) {
+
+function showStatus(message){
 
   document
     .getElementById('status')
@@ -730,9 +1110,10 @@ function showStatus(message) {
 
 }
 
-if (
+
+if(
   localStorage.getItem('queen_admin')
-) {
+){
 
   secret =
     localStorage.getItem(
@@ -748,9 +1129,10 @@ if (
 </body>
 </html>`;
 
+
 module.exports = async (req,res) => {
 
-  if (req.method === 'GET') {
+  if(req.method === 'GET'){
 
     return res
       .status(200)
@@ -762,7 +1144,8 @@ module.exports = async (req,res) => {
 
   }
 
-  if (req.method !== 'POST') {
+
+  if(req.method !== 'POST'){
 
     return res.status(405).json({
 
@@ -774,7 +1157,8 @@ module.exports = async (req,res) => {
 
   }
 
-  if (!auth(req)) {
+
+  if(!auth(req)){
 
     return res.status(401).json({
 
@@ -786,33 +1170,43 @@ module.exports = async (req,res) => {
 
   }
 
-  try {
+
+  try{
 
     const action =
       req.body &&
       req.body.action;
 
-    if (action === 'get') {
+
+    if(action === 'get'){
+
+      let current =
+        await getConfig();
+
+      current =
+        mergeDefaultCommands(
+          current
+        );
 
       return res.status(200).json({
 
         ok:true,
 
-        config:
-          await getConfig()
+        config:current
 
       });
 
     }
 
-    if (action === 'save') {
 
-      if (
+    if(action === 'save'){
+
+      if(
         !req.body.config ||
         !Array.isArray(
           req.body.config.commands
         )
-      ) {
+      ){
 
         return res.status(400).json({
 
@@ -824,8 +1218,13 @@ module.exports = async (req,res) => {
 
       }
 
+      const finalConfig =
+        mergeDefaultCommands(
+          req.body.config
+        );
+
       await saveConfig(
-        req.body.config
+        finalConfig
       );
 
       return res.status(200).json({
@@ -839,10 +1238,13 @@ module.exports = async (req,res) => {
 
     }
 
-    if (action === 'sync') {
+
+    if(action === 'sync'){
 
       const current =
-        await getConfig();
+        mergeDefaultCommands(
+          await getConfig()
+        );
 
       const commands =
         (current.commands || [])
@@ -860,7 +1262,7 @@ module.exports = async (req,res) => {
 
               command:
                 String(item.command)
-                  .replace(/^\//,'')
+                  .replace(/^\\//,'')
                   .trim(),
 
               description:
@@ -887,7 +1289,7 @@ module.exports = async (req,res) => {
           }
         );
 
-      if (!result.ok) {
+      if(!result.ok){
 
         return res.status(500).json({
 
@@ -912,7 +1314,8 @@ module.exports = async (req,res) => {
 
     }
 
-    if (action === 'setup') {
+
+    if(action === 'setup'){
 
       const host =
         req.headers.host;
@@ -923,7 +1326,7 @@ module.exports = async (req,res) => {
           'https'
         ).split(',')[0];
 
-      if (!host) {
+      if(!host){
 
         return res.status(500).json({
 
@@ -945,7 +1348,7 @@ module.exports = async (req,res) => {
         url:webhookUrl
       };
 
-      if (process.env.WEBHOOK_SECRET) {
+      if(process.env.WEBHOOK_SECRET){
 
         payload.secret_token =
           process.env.WEBHOOK_SECRET;
@@ -958,7 +1361,7 @@ module.exports = async (req,res) => {
           payload
         );
 
-      if (!result.ok) {
+      if(!result.ok){
 
         return res.status(500).json({
 
@@ -984,6 +1387,7 @@ module.exports = async (req,res) => {
 
     }
 
+
     return res.status(400).json({
 
       ok:false,
@@ -992,7 +1396,8 @@ module.exports = async (req,res) => {
 
     });
 
-  } catch(error) {
+
+  }catch(error){
 
     console.error(
       'ADMIN ERROR:',
