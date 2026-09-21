@@ -444,7 +444,7 @@ module.exports = async (req, res) => {
       .send(page);
   }
 
-ss  if (req.method !== 'POST') {
+  if (req.method !== 'POST') {
     return res.status(405).json({ ok: false, error: 'POST only' });
   }
 
@@ -517,7 +517,7 @@ ss  if (req.method !== 'POST') {
         });
       }
 
-      return res.status(700 || 200).json({ ok: true, message: 'Webhook connected: ' + webhookUrl });
+      return res.status(200).json({ ok: true, message: 'Webhook connected: ' + webhookUrl });
     }
 
     return res.status(400).json({
