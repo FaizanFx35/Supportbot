@@ -15,7 +15,6 @@ async function tg(method, body) {
 
 function keyboard(buttons = []) {
   const rows = [];
-  // Har button ko apni alag row mein rakhne ke liye
   for (let i = 0; i < buttons.length; i += 1) {
     rows.push([{ text: buttons[i].text, url: buttons[i].url }]);
   }
@@ -37,24 +36,31 @@ async function handle(update) {
   const chatId = msg.chat.id;
   const text = (msg.text || '').trim();
   
-  // Command nikalne ka tareeqa (jaise /trendo -> trendo)
+  // User ki bheji hui command ko saaf karna (jaise /xm@bot -> xm)
   const commandMatch = text.match(/^\/([a-zA-Z0-9_]+)/);
-  const command = commandMatch ? commandMatch[1].toLowerCase() : '';
+  const inputCommand = commandMatch ? commandMatch[1].toLowerCase() : '';
 
   const config = await getConfig();
   let commands = Array.isArray(config.commands) ? config.commands : [];
 
-  // Command ko find karein
-  let item = commands.find(c => c && String(c.command).replace(/^\//, '').trim().toLowerCase() === command);
+  // Command ko config mein dhoondna (slash hata kar compare karna)
+  let item = commands.find(c => {
+    if (!c || !c.command) return false;
+    const cleanCmd = String(c.command).replace(/^\//, '').trim().toLowerCase();
+    return cleanCmd === inputCommand;
+  });
 
-  // Agar command na miley toh 'start' use karein
+  // Agar specific command na miley, tabhi 'start' use ho
   if (!item) {
-    item = commands.find(c => c && String(c.command).replace(/^\//, '').trim().toLowerCase() === 'start');
+    item = commands.find(c => {
+      if (!c || !c.command) return false;
+      return String(c.command).replace(/^\//, '').trim().toLowerCase() === 'start';
+    });
   }
 
   if (!item) return;
 
-  if (command === 'help') {
+  if (inputCommand === 'help') {
     const list = commands.map(c => `/${String(c.command).replace(/^\//, '').trim()} - ${c.description || ''}`).join('\n');
     item = { ...item, text: `${item.text}\n\n${list}` };
   }
