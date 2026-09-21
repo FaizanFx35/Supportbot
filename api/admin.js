@@ -1,6 +1,8 @@
 const { getConfig, saveConfig } = require('./config');
+
 const TOKEN = process.env.BOT_TOKEN || '';
 const ADMIN_SECRET = process.env.ADMIN_SECRET || '';
+
 function esc(value) {
   return String(value ?? '')
     .replaceAll('&', '&amp;')
@@ -8,6 +10,7 @@ function esc(value) {
     .replaceAll('>', '&gt;')
     .replaceAll('"', '&quot;');
 }
+
 function auth(req) {
   return Boolean(
     ADMIN_SECRET &&
@@ -15,8 +18,10 @@ function auth(req) {
     req.headers['x-admin-secret'] === ADMIN_SECRET
   );
 }
+
 async function telegram(method, body) {
   if (!TOKEN) throw new Error('BOT_TOKEN is missing');
+
   const response = await fetch(
     `https://api.telegram.org/bot${TOKEN}/${method}`,
     {
@@ -27,238 +32,131 @@ async function telegram(method, body) {
       body: JSON.stringify(body || {})
     }
   );
+
   return await response.json();
 }
-/*
-|--------------------------------------------------------------------------
 
-| DEFAULT COMMANDS
-| :--- |
-| Missing commands are automatically added.
-| Existing commands are kept.
-| :--- |
-
-*/
 const DEFAULT_COMMANDS = [
   {
     command: 'start',
     description: 'Install the Official App and Follow Our Signals',
-    text:
-      '👋 Welcome to Fx Signal Lab!\n\n' +
-      '📲 Download our official app, access Forex Signals, and explore our latest apps and services.\n\n' +
-      'Choose an option below 👇',
+    text: '👋 Welcome to Fx Signal Lab!\n\n📲 Download our official app, access Forex Signals, and explore our latest apps and services.\n\nChoose an option below 👇',
     buttons: [
-      {
-        text: '⭐ Official App',
-        url: 'https://play.google.com/store/apps/details?id=co.median.android.eezlxez'
-      },
-      {
-        text: '📊 Forex Signals App',
-        url: 'https://play.google.com/store/apps/details?id=co.median.android.odrkwln'
-      },
-      {
-        text: '💼 Exness Broker',
-        url: 'https://one.exnessonelink.com/a/vtkbbmje'
-      },
-      {
-        text: '📱 All Fx Signal Lab Apps',
-        url: 'https://play.google.com/store/apps/developer?id=Fx+Signal+Lab'
-      }
+      { text: '⭐ Official App', url: 'https://play.google.com/store/apps/details?id=co.median.android.eezlxez' },
+      { text: '📊 Forex Signals App', url: 'https://play.google.com/store/apps/details?id=co.median.android.odrkwln' },
+      { text: '💼 Exness Broker', url: 'https://one.exnessonelink.com/a/vtkbbmje' },
+      { text: '📱 All Fx Signal Lab Apps', url: 'https://play.google.com/store/apps/developer?id=Fx+Signal+Lab' }
     ]
   },
   {
     command: 'download',
     description: 'Download Our Apps',
-    text:
-      '📲 Fx Signal Lab Apps\n\n' +
-      'Choose what you need below 👇',
+    text: '📲 Fx Signal Lab Apps\n\nChoose what you need below 👇',
     buttons: [
-      {
-        text: '⭐ Official App',
-        url: 'https://play.google.com/store/apps/details?id=co.median.android.eezlxez'
-      },
-      {
-        text: '📊 Forex Signals App',
-        url: 'https://play.google.com/store/apps/details?id=co.median.android.odrkwln'
-      },
-      {
-        text: '💼 Exness Broker',
-        url: 'https://one.exnessonelink.com/a/vtkbbmje'
-      },
-      {
-        text: '📱 All Fx Signal Lab Apps',
-        url: 'https://play.google.com/store/apps/developer?id=Fx+Signal+Lab'
-      }
+      { text: '⭐ Official App', url: 'https://play.google.com/store/apps/details?id=co.median.android.eezlxez' },
+      { text: '📊 Forex Signals App', url: 'https://play.google.com/store/apps/details?id=co.median.android.odrkwln' },
+      { text: '💼 Exness Broker', url: 'https://one.exnessonelink.com/a/vtkbbmje' },
+      { text: '📱 All Fx Signal Lab Apps', url: 'https://play.google.com/store/apps/developer?id=Fx+Signal+Lab' }
     ]
   },
   {
     command: 'signals',
     description: 'Get the Latest Trading Signals',
-    text:
-      '📊 Latest Trading Signals\n\n' +
-      'Get our latest Forex trading signals, including Entry, Stop Loss and Take Profit levels.\n\n' +
-      'Tap below to open the Forex Signals App 👇',
+    text: '📊 Latest Trading Signals\n\nGet our latest Forex trading signals, including Entry, Stop Loss and Take Profit levels.\n\nTap below to open the Forex Signals App 👇',
     buttons: [
-      {
-        text: '📲 Open Forex Signals App',
-        url: 'https://play.google.com/store/apps/details?id=co.median.android.odrkwln'
-      }
+      { text: '📲 Open Forex Signals App', url: 'https://play.google.com/store/apps/details?id=co.median.android.odrkwln' }
     ]
   },
   {
     command: 'gold',
     description: 'Get the Latest Gold XAUUSD Signals',
-    text:
-      '🥇 Gold XAUUSD Signals\n\n' +
-      'Get the latest Gold trading signals with Entry, Stop Loss and Take Profit levels.\n\n' +
-      'Open the Forex Signals App to view the latest Gold signals 👇',
+    text: '🥇 Gold XAUUSD Signals\n\nGet the latest Gold trading signals with Entry, Stop Loss and Take Profit levels.\n\nOpen the Forex Signals App to view the latest Gold signals 👇',
     buttons: [
-      {
-        text: '🥇 Open Gold Signals',
-        url: 'https://play.google.com/store/apps/details?id=co.median.android.odrkwln'
-      }
+      { text: '🥇 Open Gold Signals', url: 'https://play.google.com/store/apps/details?id=co.median.android.odrkwln' }
     ]
   },
   {
     command: 'forex',
     description: 'Get Forex Trading Signals',
-    text:
-      '📊 Forex Trading Signals\n\n' +
-      'Access our latest Forex signals with Entry, Stop Loss and Take Profit levels.\n\n' +
-      'Tap below to open the Forex Signals App 👇',
+    text: '📊 Forex Trading Signals\n\nAccess our latest Forex signals with Entry, Stop Loss and Take Profit levels.\n\nTap below to open the Forex Signals App 👇',
     buttons: [
-      {
-        text: '📲 Open Forex Signals App',
-        url: 'https://play.google.com/store/apps/details?id=co.median.android.odrkwln'
-      }
+      { text: '📲 Open Forex Signals App', url: 'https://play.google.com/store/apps/details?id=co.median.android.odrkwln' }
     ]
   },
   {
     command: 'crypto',
     description: 'Get Crypto Trading Signals',
-    text:
-      '₿ Crypto Trading Signals\n\n' +
-      'Access our latest Crypto trading signals and market updates.\n\n' +
-      'Tap below to open the Forex Signals App 👇',
+    text: '₿ Crypto Trading Signals\n\nAccess our latest Crypto trading signals and market updates.\n\nTap below to open the Forex Signals App 👇',
     buttons: [
-      {
-        text: '📲 Open Signals App',
-        url: 'https://play.google.com/store/apps/details?id=co.median.android.odrkwln'
-      }
+      { text: '📲 Open Signals App', url: 'https://play.google.com/store/apps/details?id=co.median.android.odrkwln' }
     ]
   },
   {
     command: 'broker',
     description: 'Open Exness Broker Account',
-    text:
-      '💼 Exness Broker\n\n' +
-      'Open an Exness account through our official partner link.\n\n' +
-      '👇 Continue to Exness:',
+    text: '💼 Exness Broker\n\nOpen an Exness account through our official partner link.\n\n👇 Continue to Exness:',
     buttons: [
-      {
-        text: '🚀 Open Exness Account',
-        url: 'https://one.exnessonelink.com/a/vtkbbmje'
-      }
+      { text: '🚀 Open Exness Account', url: 'https://one.exnessonelink.com/a/vtkbbmje' }
     ]
   },
   {
     command: 'apps',
     description: 'View All Fx Signal Lab Apps',
-    text:
-      '📱 Explore all Fx Signal Lab Apps.\n\n' +
-      'Choose from our official apps and trading tools 👇',
+    text: '📱 Explore all Fx Signal Lab Apps.\n\nChoose from our official apps and trading tools 👇',
     buttons: [
-      {
-        text: '🔎 View All Apps',
-        url: 'https://play.google.com/store/apps/developer?id=Fx+Signal+Lab'
-      }
+      { text: '🔎 View All Apps', url: 'https://play.google.com/store/apps/developer?id=Fx+Signal+Lab' }
     ]
   },
   {
     command: 'support',
     description: 'Contact Our Support Team',
-    text:
-      '🆘 Fx Signal Lab Support\n\n' +
-      'Need help with our apps, signals or services?\n\n' +
-      'Contact our support team below 👇',
+    text: '🆘 Fx Signal Lab Support\n\nNeed help with our apps, signals or services?\n\nContact our support team below 👇',
     buttons: [
-      {
-        text: '💬 Contact Support',
-        url: 'https://t.me/forexqueeni'
-      }
+      { text: '💬 Contact Support', url: 'https://t.me/forexqueeni' }
     ]
   },
   {
     command: 'channel',
     description: 'Join Our Official Telegram Channel',
-    text:
-      '📢 Official Telegram Channel\n\n' +
-      'Get the latest trading signals, market updates, announcements and important updates from Fx Signal Lab.\n\n' +
-      '👇 Join our official channel:',
+    text: '📢 Official Telegram Channel\n\nGet the latest trading signals, market updates, announcements and important updates from Fx Signal Lab.\n\n👇 Join our official channel:',
     buttons: [
-      {
-        text: '📢 Join Official Channel',
-        url: 'https://t.me/livesignals_trading'
-      }
+      { text: '📢 Join Official Channel', url: 'https://t.me/livesignals_trading' }
     ]
   },
   {
     command: 'group',
     description: 'Join Our Official Telegram Group',
-    text:
-      '👥 Official Telegram Group\n\n' +
-      'Join our community to stay connected with other traders and receive updates from Fx Signal Lab.\n\n' +
-      '👇 Join the group:',
+    text: '👥 Official Telegram Group\n\nJoin our community to stay connected with other traders and receive updates from Fx Signal Lab.\n\n👇 Join the group:',
     buttons: [
-      {
-        text: '👥 Join Official Group',
-        url: 'https://t.me/livesignals_tradings'
-      }
+      { text: '👥 Join Official Group', url: 'https://t.me/livesignals_tradings' }
     ]
   },
   {
     command: 'exness',
     description: 'Open Exness Broker Account',
-    text:
-      '💼 Exness Broker\n\n' +
-      'Open your Exness account through our official partner link.\n\n' +
-      '👇 Continue to Exness:',
+    text: '💼 Exness Broker\n\nOpen your Exness account through our official partner link.\n\n👇 Continue to Exness:',
     buttons: [
-      {
-        text: '🚀 Open Exness Account',
-        url: 'https://one.exnessonelink.com/a/vtkbbmje'
-      }
+      { text: '🚀 Open Exness Account', url: 'https://one.exnessonelink.com/a/vtkbbmje' }
     ]
   },
   {
     command: 'xm',
     description: 'Open XM Broker Account',
-    text:
-      '💼 XM Broker\n\n' +
-      'Access the broker registration link below.\n\n' +
-      '👇 Continue:',
+    text: '💼 XM Broker\n\nAccess the broker registration link below.\n\n👇 Continue:',
     buttons: [
-      {
-        text: '🚀 Open XM Account',
-        url: 'https://trendo.com/invite?market=googleplay&code=3317391'
-      }
+      { text: '🚀 Open XM Account', url: 'https://trendo.com/invite?market=googleplay&code=3317391' }
     ]
   },
   {
     command: 'trendo',
     description: 'Open Trendo Market Broker Account',
-    text:
-      '💼 Trendo Market\n\n' +
-      'Open Trendo Market using the link below.\n\n' +
-      '👇 Register / Open Trendo:',
+    text: '💼 Trendo Market\n\nOpen Trendo Market using the link below.\n\n👇 Register / Open Trendo:',
     buttons: [
-      {
-        text: '🚀 Open Trendo Market',
-        url: 'https://trendo.com/invite?market=googleplay&code=3317391'
-      }
+      { text: '🚀 Open Trendo Market', url: 'https://trendo.com/invite?market=googleplay&code=3317391' }
     ]
   }
 ];
+
 function mergeDefaultCommands(config) {
   if (!config || typeof config !== 'object') {
     config = {};
@@ -266,11 +164,13 @@ function mergeDefaultCommands(config) {
   if (!Array.isArray(config.commands)) {
     config.commands = [];
   }
+
   const existing = new Set(
     config.commands
       .map(item => String(item?.command || '').replace(/^\//, '').trim())
       .filter(Boolean)
   );
+
   DEFAULT_COMMANDS.forEach(defaultCommand => {
     if (!existing.has(defaultCommand.command)) {
       config.commands.push(
@@ -278,8 +178,10 @@ function mergeDefaultCommands(config) {
       );
     }
   });
+
   return config;
 }
+
 const page = `<!doctype html>
 <html>
 <head>
@@ -316,11 +218,13 @@ button{border:0;border-radius:10px;padding:11px 16px;font-weight:700;cursor:poin
 </div>
 <span class="pill">Self-hosted</span>
 </div>
+
 <div id="login" class="card">
 <h3>Admin Login</h3>
 <input id="secret" type="password" placeholder="ADMIN_SECRET">
 <button class="primary" onclick="login()">Open Panel</button>
 </div>
+
 <div id="panel" class="hidden">
 <div class="card">
 <div class="top">
@@ -337,15 +241,18 @@ button{border:0;border-radius:10px;padding:11px 16px;font-weight:700;cursor:poin
 </div>
 </div>
 </div>
+
 <script>
 let secret = '';
 let config = { commands:[] };
+
 function login(){
   secret = document.getElementById('secret').value.trim();
   if(!secret) return;
   localStorage.setItem('queen_admin', secret);
   load();
 }
+
 async function api(action,body){
   const response = await fetch('/api/admin', {
     method:'POST',
@@ -355,26 +262,31 @@ async function api(action,body){
     },
     body:JSON.stringify(Object.assign({action:action}, body || {}))
   });
+
   let data;
   try{
     data = await response.json();
   }catch(e){
     throw new Error('Server returned an invalid response. Check Vercel logs.');
   }
+
   if(!response.ok || !data.ok){
     throw new Error(data.error || data.message || 'Request failed');
   }
   return data;
 }
+
 async function load(){
   try{
     secret = secret || localStorage.getItem('queen_admin') || '';
     if(!secret) return;
+
     const data = await api('get');
     config = data.config || {commands:[]};
     if(!Array.isArray(config.commands)){
       config.commands = [];
     }
+
     document.getElementById('login').classList.add('hidden');
     document.getElementById('panel').classList.remove('hidden');
     render();
@@ -382,9 +294,11 @@ async function load(){
     document.getElementById('status').textContent = error.message;
   }
 }
+
 function render(){
   const list = document.getElementById('list');
   list.innerHTML = '';
+
   (config.commands || []).forEach(function(command,index){
     const card = document.createElement('div');
     card.className = 'cmd';
@@ -407,11 +321,13 @@ function render(){
     renderButtons(index);
   });
 }
+
 function renderButtons(commandIndex){
   const box = document.getElementById('buttons-' + commandIndex);
   if(!box) return;
   box.innerHTML = '';
   const buttons = config.commands[commandIndex].buttons || [];
+
   buttons.forEach(function(button,buttonIndex){
     const div = document.createElement('div');
     div.className = 'btn';
@@ -422,6 +338,7 @@ function renderButtons(commandIndex){
     box.appendChild(div);
   });
 }
+
 function syncFields(){
   document.querySelectorAll('[data-command-index]').forEach(function(element){
     const index = Number(element.dataset.commandIndex);
@@ -430,6 +347,7 @@ function syncFields(){
       config.commands[index][field] = element.value;
     }
   });
+
   document.querySelectorAll('[data-button-command]').forEach(function(element){
     const commandIndex = Number(element.dataset.buttonCommand);
     const buttonIndex = Number(element.dataset.buttonIndex);
@@ -439,6 +357,7 @@ function syncFields(){
     }
   });
 }
+
 function addCmd(){
   syncFields();
   config.commands.push({
@@ -450,12 +369,14 @@ function addCmd(){
   render();
   showStatus('New command added. Edit it and click 💾 Save to GitHub.');
 }
+
 function deleteCommand(index){
   syncFields();
   if(!confirm('Delete this command?')) return;
   config.commands.splice(index,1);
   render();
 }
+
 function addButton(commandIndex){
   syncFields();
   if(!Array.isArray(config.commands[commandIndex].buttons)){
@@ -467,11 +388,13 @@ function addButton(commandIndex){
   });
   render();
 }
+
 function deleteButton(commandIndex,buttonIndex){
   syncFields();
   config.commands[commandIndex].buttons.splice(buttonIndex, 1);
   render();
 }
+
 async function saveAll(){
   try{
     syncFields();
@@ -481,6 +404,7 @@ async function saveAll(){
     showStatus(error.message);
   }
 }
+
 async function syncTelegram(){
   try{
     syncFields();
@@ -490,6 +414,7 @@ async function syncTelegram(){
     showStatus(error.message);
   }
 }
+
 async function setupWebhook(){
   try{
     const data = await api('setup');
@@ -498,9 +423,11 @@ async function setupWebhook(){
     showStatus(error.message);
   }
 }
+
 function showStatus(message){
   document.getElementById('status').textContent = message;
 }
+
 if(localStorage.getItem('queen_admin')){
   secret = localStorage.getItem('queen_admin');
   load();
@@ -508,6 +435,7 @@ if(localStorage.getItem('queen_admin')){
 </script>
 </body>
 </html>`;
+
 module.exports = async (req, res) => {
   if (req.method === 'GET') {
     return res
@@ -515,27 +443,34 @@ module.exports = async (req, res) => {
       .setHeader('content-type', 'text/html; charset=utf-8')
       .send(page);
   }
-  if (req.method !== 'POST') {
+
+ss  if (req.method !== 'POST') {
     return res.status(405).json({ ok: false, error: 'POST only' });
   }
+
   if (!auth(req)) {
     return res.status(401).json({ ok: false, error: 'Wrong ADMIN_SECRET' });
   }
+
   try {
     const action = req.body && req.body.action;
+
     if (action === 'get') {
       let current = await getConfig();
       current = mergeDefaultCommands(current);
       return res.status(200).json({ ok: true, config: current });
     }
+
     if (action === 'save') {
       if (!req.body.config || !Array.isArray(req.body.config.commands)) {
         return res.status(400).json({ ok: false, error: 'Invalid config' });
       }
+
       const finalConfig = mergeDefaultCommands(req.body.config);
       await saveConfig(finalConfig);
       return res.status(200).json({ ok: true, message: 'Saved to GitHub. Vercel will redeploy automatically.' });
     }
+
     if (action === 'sync') {
       const current = mergeDefaultCommands(await getConfig());
       const commands = (current.commands || [])
@@ -545,42 +480,54 @@ module.exports = async (req, res) => {
           description: String(item.description || '').slice(0, 256)
         }))
         .filter(item => /^[a-z0-9_]{1,32}$/.test(item.command));
+
       const result = await telegram('setMyCommands', { commands });
+
       if (!result.ok) {
         return res.status(500).json({
           ok: false,
           error: result.description || JSON.stringify(result)
         });
       }
+
       return res.status(200).json({ ok: true, message: 'Telegram command menu synced.' });
     }
+
     if (action === 'setup') {
       const host = req.headers.host;
       const proto = String(req.headers['x-forwarded-proto'] || 'https').split(',')[0];
+
       if (!host) {
-        return res.status(500).json({ ok: false, error: 'Host header. Host header is missing' });
+        return res.status(500).json({ ok: false, error: 'Host header is missing' });
       }
+
       const webhookUrl = proto + '://' + host + '/api/webhook';
       const payload = { url: webhookUrl };
+
       if (process.env.WEBHOOK_SECRET) {
         payload.secret_token = process.env.WEBHOOK_SECRET;
       }
+
       const result = await telegram('setWebhook', payload);
+
       if (!result.ok) {
         return res.status(500).json({
           ok: false,
           error: result.description || JSON.stringify(result)
         });
       }
-      return res.status(200).json({ ok: true, message: 'Webhook connected: ' + webhookUrl });
+
+      return res.status(700 || 200).json({ ok: true, message: 'Webhook connected: ' + webhookUrl });
     }
+
     return res.status(400).json({
       ok: false,
       error: 'Unknown action'
     });
+
   } catch (error) {
     console.error('ADMIN ERROR:', error);
-    return res.status(700 || 500).json({
+    return res.status(500).json({
       ok: false,
       error: error && error.message ? error.message : 'Internal server error'
     });
