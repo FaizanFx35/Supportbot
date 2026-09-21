@@ -1,0 +1,35 @@
+{
+  "botName": "Queen i Support",
+  "commands": [
+    {
+      "command": "start",
+      "description": "Install the Official App and Follow Our Signals",
+      "text": "👋 Welcome to Fx Signal Lab!\n\n📲 Download our official app, access Forex Signals, and explore our latest apps and services.\n\nChoose an option below 👇",
+      "buttons": [
+        {"text":"⭐ Official App","url":"https://play.google.com/store/apps/details?id=co.median.android.eezlxez"},
+        {"text":"📊 Forex Signals App","url":"https://play.google.com/store/apps/details?id=co.median.android.odrkwln"},
+        {"text":"💼 Exness Broker","url":"https://one.exnessonelink.com/a/vtkbbmje"},
+        {"text":"📱 All Fx Signal Lab Apps","url":"https://play.google.com/store/apps/developer?id=Fx+Signal+Lab"}
+      ]
+    },
+    {
+      "command": "download",
+      "description": "Download Our Apps",
+      "text": "📲 Fx Signal Lab Apps\n\nChoose what you need below 👇",
+      "buttons": [
+        {"text":"⭐ Official App","url":"https://play.google.com/store/apps/details?id=co.median.android.eezlxez"},
+        {"text":"📊 Forex Signals App","url":"https://play.google.com/store/apps/details?id=co.median.android.odrkwln"},
+        {"text":"💼 Exness Broker","url":"https://one.exnessonelink.com/a/vtkbbmje"},
+        {"text":"📱 All Fx Signal Lab Apps","url":"https://play.google.com/store/apps/developer?id=Fx+Signal+Lab"}
+      ]
+    },
+    {"command":"signals","description":"Get the Latest Trading Signals","text":"📊 Forex Trading Signals\n\nOpen our Forex Signals App to view the latest signals and market updates.","buttons":[{"text":"📲 Open Forex Signals App","url":"https://play.google.com/store/apps/details?id=co.median.android.odrkwln"}]},
+    {"command":"gold","description":"Get the Latest Gold XAUUSD Signals","text":"🥇 Gold XAUUSD Signals\n\nOpen the Forex Signals App for the latest Gold/XAUUSD signals.","buttons":[{"text":"📲 Open Signals App","url":"https://play.google.com/store/apps/details?id=co.median.android.odrkwln"}]},
+    {"command":"forex","description":"Get Forex Trading Signals","text":"📊 Forex Trading Signals\n\nOpen our Forex Signals App to view the latest signals and market updates.","buttons":[{"text":"📲 Open Forex Signals App","url":"https://play.google.com/store/apps/details?id=co.median.android.odrkwln"}]},
+    {"command":"crypto","description":"Get Crypto Trading Signals","text":"₿ Crypto Signals\n\nOpen the Forex Signals App for available crypto market signals.","buttons":[{"text":"📲 Open Signals App","url":"https://play.google.com/store/apps/details?id=co.median.android.odrkwln"}]},
+    {"command":"broker","description":"Open Exness Broker Account","text":"💼 Exness Broker\n\nOpen an Exness account through our official IB link.","buttons":[{"text":"🚀 Open Exness Account","url":"https://one.exnessonelink.com/a/vtkbbmje"}]},
+    {"command":"apps","description":"View All Fx Signal Lab Apps","text":"📱 Fx Signal Lab Apps\n\nExplore all apps published by Fx Signal Lab.","buttons":[{"text":"🔎 View All Apps","url":"https://play.google.com/store/apps/developer?id=Fx+Signal+Lab"}]},
+    {"command":"support","description":"Contact Our Support Team","text":"🆘 Support\n\nFor support, please contact our team through your official support channel.","buttons":[]},
+    {"command":"help","description":"Show Help Menu","text":"🤖 Fx Signal Lab Bot\n\nUse the commands below or choose an option from the menu 👇","buttons":[]}
+  ]
+}
