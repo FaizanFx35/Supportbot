@@ -1,35 +1,37 @@
 const { getConfig, saveConfig } = require('./config');
 
-const TOKEN = process.env.BOT_TOKEN;
-const ADMIN_SECRET = process.env.ADMIN_SECRET;
+const TOKEN = process.env.BOT_TOKEN || '';
+const ADMIN_SECRET = process.env.ADMIN_SECRET || '';
 
-function esc(s) {
-  return String(s ?? '')
-    .replace(/[&<>"]/g, c => ({
-      '&': '&amp;',
-      '<': '&lt;',
-      '>': '&gt;',
-      '"': '&quot;'
-    }[c]));
+function esc(value) {
+  return String(value ?? '')
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;');
 }
 
 function auth(req) {
-  return ADMIN_SECRET && req.headers['x-admin-secret'] === ADMIN_SECRET;
+  return Boolean(
+    ADMIN_SECRET &&
+    req.headers &&
+    req.headers['x-admin-secret'] === ADMIN_SECRET
+  );
 }
 
-async function tg(method, body) {
-  const r = await fetch(
+async function telegram(method, body) {
+  if (!TOKEN) throw new Error('BOT_TOKEN is missing');
+
+  const response = await fetch(
     `https://api.telegram.org/bot${TOKEN}/${method}`,
     {
       method: 'POST',
-      headers: {
-        'content-type': 'application/json'
-      },
-      body: JSON.stringify(body)
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(body || {})
     }
   );
 
-  return r.json();
+  return await response.json();
 }
 
 const page = `<!doctype html>
@@ -53,7 +55,7 @@ body{
 }
 
 .card{
-  background:white;
+  background:#fff;
   border:1px solid #e5e9f2;
   border-radius:16px;
   padding:18px;
@@ -109,8 +111,7 @@ button{
 }
 
 .muted{
-  background:#eef2f7;
-  color:#172033
+  background:#eef2f7
 }
 
 .danger{
@@ -167,86 +168,70 @@ button{
 
 <div class="wrap">
 
-  <div class="top">
-    <div>
-      <h1>🤖 Queen i Support</h1>
-      <small>Private Telegram Bot Admin Panel</small>
-    </div>
-
-    <span class="pill">Self-hosted</span>
+<div class="top">
+  <div>
+    <h1>🤖 Queen i Support</h1>
+    <small>Private Telegram Bot Admin Panel</small>
   </div>
 
-  <div id="login" class="card">
-    <h3>Admin Login</h3>
+  <span class="pill">Self-hosted</span>
+</div>
 
-    <input
-      id="secret"
-      type="password"
-      placeholder="ADMIN_SECRET"
-    >
+<div id="login" class="card">
 
-    <button
-      id="loginBtn"
-      type="button"
-      class="primary"
-    >
-      Open Panel
-    </button>
-  </div>
+  <h3>Admin Login</h3>
 
-  <div id="panel" class="hidden">
+  <input
+    id="secret"
+    type="password"
+    placeholder="ADMIN_SECRET"
+  >
 
-    <div class="card">
+  <button class="primary" onclick="login()">
+    Open Panel
+  </button>
 
-      <div class="top">
-        <h2>Commands</h2>
+</div>
 
-        <button
-          id="addCommandBtn"
-          type="button"
-          class="primary"
-        >
-          + Add Command
-        </button>
-      </div>
+<div id="panel" class="hidden">
 
-      <div id="list"></div>
+  <div class="card">
 
-      <div class="row">
+    <div class="top">
 
-        <button
-          id="saveBtn"
-          type="button"
-          class="primary"
-        >
-          💾 Save to GitHub
-        </button>
+      <h2>Commands</h2>
 
-        <button
-          id="syncBtn"
-          type="button"
-          class="muted"
-        >
-          🔄 Sync Telegram Menu
-        </button>
-
-        <button
-          id="setupBtn"
-          type="button"
-          class="muted"
-        >
-          ⚙️ Setup Webhook
-        </button>
-
-      </div>
-
-      <div id="status" class="status">
-        Ready.
-      </div>
+      <button class="primary" onclick="addCmd()">
+        + Add Command
+      </button>
 
     </div>
 
+    <div id="list"></div>
+
+    <div class="row">
+
+      <button class="primary" onclick="saveAll()">
+        💾 Save to GitHub
+      </button>
+
+      <button class="muted" onclick="syncTelegram()">
+        🔄 Sync Telegram Menu
+      </button>
+
+      <button class="muted" onclick="setupWebhook()">
+        ⚙️ Setup Webhook
+      </button>
+
+    </div>
+
+    <div id="status" class="status">
+      Ready.
+    </div>
+
   </div>
+
+</div>
 
 </div>
 
@@ -257,117 +242,71 @@ let config = {
   commands: []
 };
 
+function login() {
 
-/* =========================
-   ESCAPE HTML
-========================= */
+  secret =
+    document
+      .getElementById('secret')
+      .value
+      .trim();
 
-function escapeHtml(s) {
-
-  return String(s || '')
-    .replaceAll('&', '&amp;')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;')
-    .replaceAll('"', '&quot;');
-
-}
-
-
-/* =========================
-   STATUS
-========================= */
-
-function showStatus(message) {
-
-  const el = document.getElementById('status');
-
-  if (el) {
-    el.textContent = message;
-  }
-
-}
-
-
-/* =========================
-   LOGIN
-========================= */
-
-async function login() {
-
-  const input = document.getElementById('secret');
-
-  secret = input ? input.value.trim() : '';
-
-  if (!secret) {
-
-    showStatus('Please enter ADMIN_SECRET.');
-
-    return;
-  }
+  if (!secret) return;
 
   localStorage.setItem(
     'queen_admin',
     secret
   );
 
-  await load();
-
+  load();
 }
 
-
-/* =========================
-   API
-========================= */
-
-async function api(action, body = {}) {
+async function api(action, body) {
 
   const response = await fetch(
     '/api/admin',
     {
-      method: 'POST',
+      method:'POST',
 
-      headers: {
-        'content-type': 'application/json',
-        'x-admin-secret': secret
+      headers:{
+        'content-type':'application/json',
+        'x-admin-secret':secret
       },
 
-      body: JSON.stringify({
-        action,
-        ...body
-      })
+      body:JSON.stringify(
+        Object.assign(
+          { action:action },
+          body || {}
+        )
+      )
     }
   );
 
-  let result;
+  let data;
 
   try {
 
-    result = await response.json();
+    data = await response.json();
 
-  } catch {
+  } catch(e) {
 
     throw new Error(
-      'Invalid server response.'
+      'Server returned an invalid response. Check Vercel logs.'
     );
 
   }
 
-  if (!response.ok || !result.ok) {
+  if (!response.ok || !data.ok) {
 
     throw new Error(
-      result.error || 'Request failed.'
+      data.error ||
+      data.message ||
+      'Request failed'
     );
 
   }
 
-  return result;
-
+  return data;
 }
-
-
-/* =========================
-   LOAD CONFIG
-========================= */
 
 async function load() {
 
@@ -378,19 +317,18 @@ async function load() {
       localStorage.getItem('queen_admin') ||
       '';
 
-    if (!secret) {
+    if (!secret) return;
 
-      return;
-
-    }
-
-    const result = await api('get');
+    const data =
+      await api('get');
 
     config =
-      result.config ||
-      {
-        commands: []
-      };
+      data.config ||
+      { commands:[] };
+
+    if (!Array.isArray(config.commands)) {
+      config.commands = [];
+    }
 
     document
       .getElementById('login')
@@ -404,319 +342,236 @@ async function load() {
 
     render();
 
-    showStatus(
-      'Admin panel loaded.'
-    );
+  } catch(error) {
 
-  } catch (error) {
-
-    showStatus(
-      error.message
-    );
+    document
+      .getElementById('status')
+      .textContent =
+      error.message;
 
   }
 
 }
-
-
-/* =========================
-   RENDER COMMANDS
-========================= */
 
 function render() {
 
   const list =
     document.getElementById('list');
 
-  if (!list) return;
-
   list.innerHTML = '';
 
-  const commands =
-    config.commands || [];
+  (config.commands || [])
+    .forEach(function(command,index){
 
-  commands.forEach(
-    (command, index) => {
-
-      const wrapper =
+      const card =
         document.createElement('div');
 
-      wrapper.className = 'cmd';
+      card.className = 'cmd';
 
-      wrapper.innerHTML = `
+      card.innerHTML =
 
-        <div class="row">
+        '<div class="row">' +
 
-          <div>
+          '<div>' +
 
-            <b>/</b>
+            '<b>/</b>' +
 
-            <input
-              value="${escapeHtml(command.command)}"
-              data-i="${index}"
-              data-k="command"
-              placeholder="command"
-            >
+            '<input ' +
+              'value="' +
+              esc(command.command) +
+              '" ' +
+              'data-command-index="' +
+              index +
+              '" ' +
+              'data-field="command">' +
 
-          </div>
+          '</div>' +
 
-          <div>
+          '<div>' +
 
-            <input
-              value="${escapeHtml(command.description)}"
-              data-i="${index}"
-              data-k="description"
-              placeholder="Bot menu description"
-            >
+            '<input ' +
+              'value="' +
+              esc(command.description) +
+              '" ' +
+              'data-command-index="' +
+              index +
+              '" ' +
+              'data-field="description" ' +
+              'placeholder="Bot menu description">' +
 
-          </div>
+          '</div>' +
 
-        </div>
+        '</div>' +
 
-        <textarea
-          data-i="${index}"
-          data-k="text"
-          placeholder="Reply text"
-        >${escapeHtml(command.text)}</textarea>
+        '<textarea ' +
+          'data-command-index="' +
+          index +
+          '" ' +
+          'data-field="text" ' +
+          'placeholder="Reply text">' +
 
-        <div>
-          <b>Buttons</b>
-        </div>
+          esc(command.text) +
 
-        <div id="buttons-${index}"></div>
+        '</textarea>' +
 
-        <button
-          type="button"
-          class="muted addButtonBtn"
-          data-command-index="${index}"
-        >
-          + Button
-        </button>
+        '<div><b>Buttons</b></div>' +
 
-        <button
-          type="button"
-          class="danger deleteCommandBtn"
-          data-command-index="${index}"
-        >
-          Delete Command
-        </button>
+        '<div id="buttons-' +
+          index +
+          '"></div>' +
 
-      `;
+        '<button class="muted" ' +
+          'onclick="addButton(' +
+          index +
+          ')">' +
 
-      list.appendChild(wrapper);
+          '+ Button' +
+
+        '</button> ' +
+
+        '<button class="danger" ' +
+          'onclick="deleteCommand(' +
+          index +
+          ')">' +
+
+          'Delete Command' +
+
+        '</button>';
+
+      list.appendChild(card);
 
       renderButtons(index);
+
+    });
+
+}
+
+function renderButtons(commandIndex) {
+
+  const box =
+    document.getElementById(
+      'buttons-' + commandIndex
+    );
+
+  if (!box) return;
+
+  box.innerHTML = '';
+
+  const buttons =
+    config.commands[commandIndex].buttons || [];
+
+  buttons.forEach(
+    function(button,buttonIndex){
+
+      const div =
+        document.createElement('div');
+
+      div.className = 'btn';
+
+      div.innerHTML =
+
+        '<input ' +
+          'value="' +
+          esc(button.text) +
+          '" ' +
+          'data-button-command="' +
+          commandIndex +
+          '" ' +
+          'data-button-index="' +
+          buttonIndex +
+          '" ' +
+          'data-button-field="text" ' +
+          'placeholder="Button text">' +
+
+        '<input ' +
+          'value="' +
+          esc(button.url) +
+          '" ' +
+          'data-button-command="' +
+          commandIndex +
+          '" ' +
+          'data-button-index="' +
+          buttonIndex +
+          '" ' +
+          'data-button-field="url" ' +
+          'placeholder="https://...">' +
+
+        '<button class="danger" ' +
+          'onclick="deleteButton(' +
+          commandIndex +
+          ',' +
+          buttonIndex +
+          ')">' +
+
+          'Remove' +
+
+        '</button>';
+
+      box.appendChild(div);
 
     }
   );
 
-  attachDynamicEvents();
-
 }
-
-
-/* =========================
-   DYNAMIC BUTTON EVENTS
-========================= */
-
-function attachDynamicEvents() {
-
-  document
-    .querySelectorAll('.addButtonBtn')
-    .forEach(button => {
-
-      button.onclick = function () {
-
-        const index =
-          Number(
-            this.dataset.commandIndex
-          );
-
-        addButton(index);
-
-      };
-
-    });
-
-
-  document
-    .querySelectorAll('.deleteCommandBtn')
-    .forEach(button => {
-
-      button.onclick = function () {
-
-        const index =
-          Number(
-            this.dataset.commandIndex
-          );
-
-        deleteCommand(index);
-
-      };
-
-    });
-
-}
-
-
-/* =========================
-   SYNC INPUT FIELDS
-========================= */
 
 function syncFields() {
 
   document
-    .querySelectorAll('[data-i][data-k]')
-    .forEach(input => {
+    .querySelectorAll('[data-command-index]')
+    .forEach(function(element){
 
       const index =
-        Number(input.dataset.i);
-
-      const key =
-        input.dataset.k;
-
-      if (
-        config.commands[index]
-      ) {
-
-        config.commands[index][key] =
-          input.value;
-
-      }
-
-    });
-
-
-  document
-    .querySelectorAll('[data-b]')
-    .forEach(input => {
-
-      const commandIndex =
-        Number(input.dataset.i);
-
-      const buttonIndex =
-        Number(input.dataset.b);
-
-      const key =
-        input.dataset.k;
-
-      const command =
-        config.commands[
-          commandIndex
-        ];
-
-      if (
-        command &&
-        command.buttons &&
-        command.buttons[buttonIndex]
-      ) {
-
-        command.buttons[
-          buttonIndex
-        ][key] = input.value;
-
-      }
-
-    });
-
-}
-
-
-/* =========================
-   RENDER BUTTONS
-========================= */
-
-function renderButtons(index) {
-
-  const container =
-    document.getElementById(
-      `buttons-${index}`
-    );
-
-  if (!container) return;
-
-  container.innerHTML = '';
-
-  const buttons =
-    config.commands[index].buttons || [];
-
-
-  buttons.forEach(
-    (button, buttonIndex) => {
-
-      const wrapper =
-        document.createElement('div');
-
-      wrapper.className = 'btn';
-
-      wrapper.innerHTML = `
-
-        <input
-          value="${escapeHtml(button.text)}"
-          data-i="${index}"
-          data-b="${buttonIndex}"
-          data-k="text"
-          placeholder="Button text"
-        >
-
-        <input
-          value="${escapeHtml(button.url)}"
-          data-i="${index}"
-          data-b="${buttonIndex}"
-          data-k="url"
-          placeholder="https://..."
-        >
-
-        <button
-          type="button"
-          class="danger deleteButtonBtn"
-          data-command-index="${index}"
-          data-button-index="${buttonIndex}"
-        >
-          Remove
-        </button>
-
-      `;
-
-      container.appendChild(
-        wrapper
-      );
-
-    }
-  );
-
-
-  document
-    .querySelectorAll('.deleteButtonBtn')
-    .forEach(button => {
-
-      button.onclick = function () {
-
-        const commandIndex =
-          Number(
-            this.dataset.commandIndex
-          );
-
-        const buttonIndex =
-          Number(
-            this.dataset.buttonIndex
-          );
-
-        deleteButton(
-          commandIndex,
-          buttonIndex
+        Number(
+          element.dataset.commandIndex
         );
 
-      };
+      const field =
+        element.dataset.field;
+
+      if (config.commands[index]) {
+
+        config.commands[index][field] =
+          element.value;
+
+      }
+
+    });
+
+  document
+    .querySelectorAll('[data-button-command]')
+    .forEach(function(element){
+
+      const commandIndex =
+        Number(
+          element.dataset.buttonCommand
+        );
+
+      const buttonIndex =
+        Number(
+          element.dataset.buttonIndex
+        );
+
+      const field =
+        element.dataset.buttonField;
+
+      if (
+        config.commands[commandIndex] &&
+        Array.isArray(
+          config.commands[commandIndex].buttons
+        ) &&
+        config.commands[commandIndex]
+          .buttons[buttonIndex]
+      ) {
+
+        config.commands[commandIndex]
+          .buttons[buttonIndex][field] =
+          element.value;
+
+      }
 
     });
 
 }
-
-
-/* =========================
-   ADD COMMAND
-========================= */
 
 function addCmd() {
 
@@ -724,83 +579,57 @@ function addCmd() {
 
   config.commands.push({
 
-    command: 'newcommand',
+    command:'newcommand',
 
-    description: 'New command',
+    description:'New command',
 
-    text: 'Your message here',
+    text:'Your message here',
 
-    buttons: []
+    buttons:[]
 
   });
 
   render();
 
-  showStatus(
-    'New command added.'
-  );
-
 }
-
-
-/* =========================
-   DELETE COMMAND
-========================= */
 
 function deleteCommand(index) {
 
   syncFields();
 
-  config.commands.splice(
-    index,
-    1
-  );
+  config.commands.splice(index,1);
 
   render();
 
-  showStatus(
-    'Command removed.'
-  );
-
 }
 
-
-/* =========================
-   ADD BUTTON
-========================= */
-
-function addButton(index) {
+function addButton(commandIndex) {
 
   syncFields();
 
   if (
-    !config.commands[index].buttons
+    !Array.isArray(
+      config.commands[commandIndex].buttons
+    )
   ) {
 
-    config.commands[index].buttons = [];
+    config.commands[commandIndex].buttons = [];
 
   }
 
-  config.commands[index].buttons.push({
+  config.commands[commandIndex]
+    .buttons
+    .push({
 
-    text: 'Button',
+      text:'Button',
 
-    url: 'https://'
+      url:'https://'
 
-  });
+    });
 
   render();
 
-  showStatus(
-    'Button added.'
-  );
-
 }
-
-
-/* =========================
-   DELETE BUTTON
-========================= */
 
 function deleteButton(
   commandIndex,
@@ -809,25 +638,13 @@ function deleteButton(
 
   syncFields();
 
-  config.commands[
-    commandIndex
-  ].buttons.splice(
-    buttonIndex,
-    1
-  );
+  config.commands[commandIndex]
+    .buttons
+    .splice(buttonIndex,1);
 
   render();
 
-  showStatus(
-    'Button removed.'
-  );
-
 }
-
-
-/* =========================
-   SAVE TO GITHUB
-========================= */
 
 async function saveAll() {
 
@@ -835,24 +652,20 @@ async function saveAll() {
 
     syncFields();
 
-    showStatus(
-      'Saving to GitHub...'
-    );
-
-    const result =
+    const data =
       await api(
         'save',
         {
-          config
+          config:config
         }
       );
 
     showStatus(
-      result.message ||
-      'Saved successfully.'
+      data.message ||
+      'Saved.'
     );
 
-  } catch (error) {
+  } catch(error) {
 
     showStatus(
       error.message
@@ -861,11 +674,6 @@ async function saveAll() {
   }
 
 }
-
-
-/* =========================
-   SYNC TELEGRAM MENU
-========================= */
 
 async function syncTelegram() {
 
@@ -873,19 +681,15 @@ async function syncTelegram() {
 
     syncFields();
 
-    showStatus(
-      'Syncing Telegram menu...'
-    );
-
-    const result =
+    const data =
       await api('sync');
 
     showStatus(
-      result.message ||
+      data.message ||
       'Telegram menu synced.'
     );
 
-  } catch (error) {
+  } catch(error) {
 
     showStatus(
       error.message
@@ -894,29 +698,20 @@ async function syncTelegram() {
   }
 
 }
-
-
-/* =========================
-   SETUP WEBHOOK
-========================= */
 
 async function setupWebhook() {
 
   try {
 
-    showStatus(
-      'Setting up Telegram webhook...'
-    );
-
-    const result =
+    const data =
       await api('setup');
 
     showStatus(
-      result.message ||
+      data.message ||
       'Webhook connected.'
     );
 
-  } catch (error) {
+  } catch(error) {
 
     showStatus(
       error.message
@@ -926,112 +721,34 @@ async function setupWebhook() {
 
 }
 
+function showStatus(message) {
 
-/* =========================
-   PAGE EVENTS
-========================= */
+  document
+    .getElementById('status')
+    .textContent =
+    message;
 
-document.addEventListener(
-  'DOMContentLoaded',
-  function () {
+}
 
-    const loginBtn =
-      document.getElementById(
-        'loginBtn'
-      );
+if (
+  localStorage.getItem('queen_admin')
+) {
 
-    const addCommandBtn =
-      document.getElementById(
-        'addCommandBtn'
-      );
+  secret =
+    localStorage.getItem(
+      'queen_admin'
+    );
 
-    const saveBtn =
-      document.getElementById(
-        'saveBtn'
-      );
+  load();
 
-    const syncBtn =
-      document.getElementById(
-        'syncBtn'
-      );
-
-    const setupBtn =
-      document.getElementById(
-        'setupBtn'
-      );
-
-
-    if (loginBtn) {
-
-      loginBtn.onclick =
-        login;
-
-    }
-
-
-    if (addCommandBtn) {
-
-      addCommandBtn.onclick =
-        addCmd;
-
-    }
-
-
-    if (saveBtn) {
-
-      saveBtn.onclick =
-        saveAll;
-
-    }
-
-
-    if (syncBtn) {
-
-      syncBtn.onclick =
-        syncTelegram;
-
-    }
-
-
-    if (setupBtn) {
-
-      setupBtn.onclick =
-        setupWebhook;
-
-    }
-
-
-    const savedSecret =
-      localStorage.getItem(
-        'queen_admin'
-      );
-
-    if (savedSecret) {
-
-      secret =
-        savedSecret;
-
-      load();
-
-    }
-
-  }
-);
+}
 
 </script>
 
 </body>
 </html>`;
 
-
-/* =========================
-   API HANDLER
-========================= */
-
-module.exports = async (
-  req,
-  res
-) => {
+module.exports = async (req,res) => {
 
   if (req.method === 'GET') {
 
@@ -1039,50 +756,47 @@ module.exports = async (
       .status(200)
       .setHeader(
         'content-type',
-        'text/html'
+        'text/html; charset=utf-8'
       )
       .send(page);
 
   }
 
-
   if (req.method !== 'POST') {
 
-    return res
-      .status(405)
-      .json({
-        ok: false,
-        error: 'POST only'
-      });
+    return res.status(405).json({
+
+      ok:false,
+
+      error:'POST only'
+
+    });
 
   }
-
 
   if (!auth(req)) {
 
-    return res
-      .status(401)
-      .json({
-        ok: false,
-        error: 'Wrong ADMIN_SECRET'
-      });
+    return res.status(401).json({
+
+      ok:false,
+
+      error:'Wrong ADMIN_SECRET'
+
+    });
 
   }
-
 
   try {
 
     const action =
-      req.body?.action;
-
-
-    /* GET CONFIG */
+      req.body &&
+      req.body.action;
 
     if (action === 'get') {
 
-      return res.json({
+      return res.status(200).json({
 
-        ok: true,
+        ok:true,
 
         config:
           await getConfig()
@@ -1091,94 +805,112 @@ module.exports = async (
 
     }
 
-
-    /* SAVE CONFIG */
-
     if (action === 'save') {
+
+      if (
+        !req.body.config ||
+        !Array.isArray(
+          req.body.config.commands
+        )
+      ) {
+
+        return res.status(400).json({
+
+          ok:false,
+
+          error:'Invalid config'
+
+        });
+
+      }
 
       await saveConfig(
         req.body.config
       );
 
-      return res.json({
+      return res.status(200).json({
 
-        ok: true,
+        ok:true,
 
         message:
-          'Saved to GitHub. Vercel will redeploy automatically if GitHub is connected.'
+          'Saved to GitHub. Vercel will redeploy automatically.'
 
       });
 
     }
 
-
-    /* SYNC TELEGRAM COMMAND MENU */
-
     if (action === 'sync') {
 
-      const config =
+      const current =
         await getConfig();
 
       const commands =
-        (config.commands || [])
-          .map(command => ({
+        (current.commands || [])
 
-            command:
-              String(
-                command.command || ''
-              )
-              .replace(
-                /^\//,
-                ''
-              ),
+          .filter(function(item){
 
-            description:
-              String(
-                command.description || ''
-              )
-              .slice(
-                0,
-                256
-              )
+            return item &&
+              item.command;
 
-          }))
-          .filter(
-            command =>
-              command.command
-          );
+          })
 
+          .map(function(item){
+
+            return {
+
+              command:
+                String(item.command)
+                  .replace(/^\//,'')
+                  .trim(),
+
+              description:
+                String(
+                  item.description || ''
+                ).slice(0,256)
+
+            };
+
+          })
+
+          .filter(function(item){
+
+            return /^[a-z0-9_]{1,32}$/
+              .test(item.command);
+
+          });
 
       const result =
-        await tg(
+        await telegram(
           'setMyCommands',
           {
-            commands
+            commands:commands
           }
         );
 
+      if (!result.ok) {
 
-      return res
-        .status(
-          result.ok
-            ? 200
-            : 500
-        )
-        .json({
+        return res.status(500).json({
 
-          ok:
-            result.ok,
+          ok:false,
 
-          message:
-            result.ok
-              ? 'Telegram command menu synced.'
-              : JSON.stringify(result)
+          error:
+            result.description ||
+            JSON.stringify(result)
 
         });
 
+      }
+
+      return res.status(200).json({
+
+        ok:true,
+
+        message:
+          'Telegram command menu synced.'
+
+      });
+
     }
-
-
-    /* SETUP TELEGRAM WEBHOOK */
 
     if (action === 'setup') {
 
@@ -1186,91 +918,97 @@ module.exports = async (
         req.headers.host;
 
       const proto =
-        (
-          req.headers[
-            'x-forwarded-proto'
-          ] || 'https'
-        )
-        .split(',')[0];
+        String(
+          req.headers['x-forwarded-proto'] ||
+          'https'
+        ).split(',')[0];
 
+      if (!host) {
 
-      const url =
+        return res.status(500).json({
+
+          ok:false,
+
+          error:'Host header is missing'
+
+        });
+
+      }
+
+      const webhookUrl =
         proto +
         '://' +
         host +
         '/api/webhook';
 
-
-      const webhookBody = {
-        url
+      const payload = {
+        url:webhookUrl
       };
 
+      if (process.env.WEBHOOK_SECRET) {
 
-      if (
-        process.env.WEBHOOK_SECRET
-      ) {
-
-        webhookBody.secret_token =
+        payload.secret_token =
           process.env.WEBHOOK_SECRET;
 
       }
 
-
       const result =
-        await tg(
+        await telegram(
           'setWebhook',
-          webhookBody
+          payload
         );
 
+      if (!result.ok) {
 
-      return res
-        .status(
-          result.ok
-            ? 200
-            : 500
-        )
-        .json({
+        return res.status(500).json({
 
-          ok:
-            result.ok,
+          ok:false,
 
-          message:
-            result.ok
-              ? 'Webhook connected: ' +
-                url
-              : JSON.stringify(result)
+          error:
+            result.description ||
+            JSON.stringify(result)
 
         });
 
+      }
+
+      return res.status(200).json({
+
+        ok:true,
+
+        message:
+          'Webhook connected: ' +
+          webhookUrl
+
+      });
+
     }
 
+    return res.status(400).json({
 
-    return res
-      .status(400)
-      .json({
+      ok:false,
 
-        ok: false,
+      error:'Unknown action'
 
-        error:
-          'Unknown action'
+    });
 
-      });
+  } catch(error) {
 
+    console.error(
+      'ADMIN ERROR:',
+      error
+    );
 
-  } catch (error) {
+    return res.status(500).json({
 
-    console.error(error);
+      ok:false,
 
-    return res
-      .status(500)
-      .json({
+      error:
+        error && error.message
+          ? error.message
+          : 'Internal server error'
 
-        ok: false,
-
-        error:
-          error.message
-
-      });
+    });
 
   }
 
